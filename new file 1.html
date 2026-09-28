@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Attendance Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12141c; --surface:#1b1e2a; --surface2:#232739; --line:#323853;
+  --text:#eef0f8; --text-dim:#a3a8c2;
+  --amber:#e8a33d; --green:#49c08a; --red:#e5555f; --blue:#6f8cff;
+  --radius:10px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f4f8; --surface:#ffffff; --surface2:#eceef6; --line:#dcdfec;
+    --text:#171a24; --text-dim:#5c6178;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12141c; --surface:#1b1e2a; --surface2:#232739; --line:#323853;
+  --text:#eef0f8; --text-dim:#a3a8c2;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:'Inter',-apple-system,sans-serif;
+  min-height:100%;
+}
+.wrap{max-width:1100px; margin:0 auto; padding:28px 20px 60px;}
+header{margin-bottom:22px;}
+.eyebrow{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--amber); font-size:13px; letter-spacing:.02em;}
+h1{font-family:'Space Grotesk',sans-serif; font-size:clamp(28px,5vw,40px); margin:4px 0 6px; font-weight:700;}
+.sub{color:var(--text-dim); font-size:14.5px; max-width:640px; line-height:1.5;}
+.semester-bar{
+  display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; font-family:'Space Grotesk',sans-serif;
+  font-size:13px; color:var(--text-dim);
+}
+.semester-bar b{color:var(--text); font-weight:600;}
+
+.grid{display:grid; grid-template-columns:1fr; gap:20px; margin-top:24px;}
+@media(min-width:880px){ .grid{grid-template-columns:380px 1fr;} }
+
+.panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:20px;
+}
+.panel h2{font-family:'Space Grotesk',sans-serif; font-size:16px; margin:0 0 14px; font-weight:600;}
+
+label{display:block; font-size:12.5px; color:var(--text-dim); margin:0 0 5px;}
+select, input[type=date], input[type=text], input[type=number]{
+  width:100%; background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  border-radius:7px; padding:9px 10px; font-size:14px; font-family:inherit;
+}
+select:focus, input:focus{outline:2px solid var(--blue); outline-offset:1px;}
+.row{display:flex; gap:8px; margin-bottom:14px;}
+.row > *{flex:1;}
+.field{margin-bottom:14px;}
+
+button{
+  font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13.5px;
+  border-radius:7px; border:1px solid var(--line); cursor:pointer; padding:9px 12px;
+  background:var(--surface2); color:var(--text);
+}
+button:hover{border-color:var(--blue);}
+.btn-primary{background:var(--amber); color:#241705; border:none;}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-ghost{background:transparent;}
+.btn-danger{color:var(--red); background:transparent; border-color:var(--line);}
+
+hr.div{border:none; border-top:1px solid var(--line); margin:16px 0;}
+
+.subject{
+  background:var(--surface2); border:1px solid var(--line); border-radius:8px;
+  padding:12px; margin-bottom:10px;
+}
+.subject-top{display:flex; gap:8px; align-items:center; margin-bottom:9px;}
+.subject-top input[type=text]{flex:1;}
+.days{display:flex; gap:5px; flex-wrap:wrap; margin-bottom:9px;}
+.day-chip{
+  font-size:12px; padding:5px 9px; border-radius:5px; border:1px solid var(--line);
+  background:var(--surface); cursor:pointer; color:var(--text-dim); user-select:none;
+  font-family:'Space Grotesk',sans-serif;
+}
+.day-chip.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+.pct-row{display:flex; align-items:center; gap:8px;}
+.pct-row label{margin:0; white-space:nowrap;}
+.pct-row input{width:80px;}
+.remove-subj{margin-left:auto; font-size:12px; padding:5px 8px;}
+
+.warning-banner{
+  background:linear-gradient(135deg,#3a1216,#2a1418); border:1px solid var(--red);
+  color:#ffd7da; border-radius:var(--radius); padding:16px 18px; margin-bottom:18px;
+  display:flex; gap:12px; align-items:flex-start;
+}
+.warning-banner .wt{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; color:#ff8a90; margin-bottom:3px;}
+.warning-banner .wi{font-size:20px; line-height:1;}
+
+.empty{color:var(--text-dim); font-size:14px; padding:30px 10px; text-align:center; border:1px dashed var(--line); border-radius:var(--radius);}
+
+.cards{display:grid; grid-template-columns:1fr; gap:12px;}
+@media(min-width:620px){ .cards{grid-template-columns:1fr 1fr;} }
+.card{
+  background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--line);
+  border-radius:var(--radius); padding:15px 16px;
+}
+.card.green{border-left-color:var(--green);}
+.card.amber{border-left-color:var(--amber);}
+.card.red{border-left-color:var(--red);}
+.card-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+.card-top .name{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15.5px;}
+.status-tag{font-size:11px; font-family:'Space Grotesk',sans-serif; font-weight:600; padding:3px 8px; border-radius:20px;}
+.status-tag.green{background:rgba(73,192,138,.16); color:var(--green);}
+.status-tag.amber{background:rgba(232,163,61,.16); color:var(--amber);}
+.status-tag.red{background:rgba(229,85,95,.16); color:var(--red);}
+.metric-row{display:flex; justify-content:space-between; font-size:13.5px; padding:4px 0; color:var(--text-dim);}
+.metric-row b{color:var(--text); font-family:'Space Grotesk',sans-serif; font-weight:600;}
+.pct-big{font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700;}
+
+footer{margin-top:30px; font-size:12px; color:var(--text-dim); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">ATTENDANCE PREDICTOR</div>
+    <h1>Know exactly how many classes you can miss.</h1>
+    <div class="sub">Pick your section, set up its weekly timetable once, enter where your attendance stands today, and see exactly how many classes you need to attend to stay safe — before it's too late to fix.</div>
+    <div class="semester-bar">
+      <div>Semester: <b id="semLabel"></b></div>
+      <div>Today: <b id="todayLabel"></b></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel" id="setupPanel">
+      <h2>1 · Section &amp; subjects</h2>
+
+      <div class="field">
+        <label for="sectionSelect">Class section</label>
+        <div class="row" style="margin-bottom:0;">
+          <select id="sectionSelect"></select>
+          <button id="renameBtn" class="btn-ghost" title="Rename section">Rename</button>
+          <button id="deleteSectionBtn" class="btn-danger" title="Delete section">Delete</button>
+        </div>
+      </div>
+      <button id="addSectionBtn" class="btn-ghost" style="width:100%; margin-bottom:16px;">+ Add new section</button>
+
+      <hr class="div">
+
+      <div id="subjectList"></div>
+      <button id="addSubjectBtn" class="btn-primary" style="width:100%; margin-top:4px;">+ Add subject</button>
+
+      <hr class="div">
+
+      <div class="field">
+        <label for="targetDate">Plan up to (target date)</label>
+        <input type="date" id="targetDate">
+      </div>
+    </div>
+
+    <div>
+      <div id="warningZone"></div>
+      <div id="dashboard"></div>
+    </div>
+  </div>
+
+  <footer>All calculations run in your browser. Nothing is uploaded anywhere.</footer>
+</div>
+
+<script>
+const SEM_START = new Date(2026,7,29); // 29 Aug 2026
+const SEM_END   = new Date(2026,10,29); // 29 Nov 2026
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_CODES = [1,2,3,4,5,6]; // Mon-Sat as options
+
+function fmt(d){ return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function isoDate(d){ return d.toISOString().slice(0,10); }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function clampDate(d,min,max){ return d<min?min:(d>max?max:d); }
+function countOccurrences(weekly, start, end){
+  // weekly: {1:count_on_Mon, 2:count_on_Tue, ... 6:count_on_Sat} — periods per week, not just presence
+  if(end < start) return 0;
+  let count=0; let d = new Date(start.getFullYear(),start.getMonth(),start.getDate());
+  const endD = new Date(end.getFullYear(),end.getMonth(),end.getDate());
+  while(d <= endD){
+    count += weekly[d.getDay()] || 0;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
+}
+
+let state = { sections: {}, activeSection: null, targetDate: null };
+
+function defaultState(){
+  const id = 'section-1';
+  return {
+    sections: { [id]: { name:'Section A', subjects:[
+      {id:'s1', name:'Subject 1', weekly:{1:1,2:0,3:1,4:0,5:1,6:0}, pct:80},
+      {id:'s2', name:'Subject 2', weekly:{1:0,2:1,3:0,4:1,5:0,6:1}, pct:70}
+    ] } },
+    activeSection: id,
+    targetDate: null
+  };
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem('attendance-predictor-state');
+    if(raw){ const parsed = JSON.parse(raw); if(parsed && parsed.sections) return parsed; }
+  }catch(e){}
+  return defaultState();
+}
+function save(){
+  try{ localStorage.setItem('attendance-predictor-state', JSON.stringify(state)); }catch(e){}
+}
+
+state = load();
+
+function uid(){ return 'id'+Math.random().toString(36).slice(2,9); }
+
+// ---------- rendering ----------
+const today = new Date(); today.setHours(0,0,0,0);
+document.getElementById('semLabel').textContent = fmt(SEM_START)+' → '+fmt(SEM_END);
+document.getElementById('todayLabel').textContent = fmt(today);
+
+const targetInput = document.getElementById('targetDate');
+targetInput.min = isoDate(clampDate(today, SEM_START, SEM_END));
+targetInput.max = isoDate(SEM_END);
+if(!state.targetDate){
+  const def = clampDate(addDays(today,21), SEM_START, SEM_END);
+  state.targetDate = isoDate(def);
+}
+targetInput.value = state.targetDate;
+targetInput.addEventListener('change', ()=>{
+  state.targetDate = targetInput.value; save(); renderDashboard();
+});
+
+const sectionSelect = document.getElementById('sectionSelect');
+
+function renderSectionOptions(){
+  sectionSelect.innerHTML = '';
+  Object.entries(state.sections).forEach(([id, sec])=>{
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = sec.name;
+    if(id === state.activeSection) opt.selected = true;
+    sectionSelect.appendChild(opt);
+  });
+}
+sectionSelect.addEventListener('change', ()=>{
+  state.activeSection = sectionSelect.value; save(); renderSubjects(); renderDashboard();
+});
+
+document.getElementById('addSectionBtn').addEventListener('click', ()=>{
+  const n = Object.keys(state.sections).length+1;
+  const id = uid();
+  state.sections[id] = { name:'Section '+n, subjects:[] };
+  state.activeSection = id;
+  save(); renderSectionOptions(); renderSubjects(); renderDashboard();
+});
+
+document.getElementById('renameBtn').addEventListener('click', ()=>{
+  const sec = state.sections[state.activeSection];
+  const name = prompt('Rename section', sec.name);
+  if(name && name.trim()){ sec.name = name.trim(); save(); renderSectionOptions(); }
+});
+
+document.getElementById('deleteSectionBtn').addEventListener('click', ()=>{
+  const ids = Object.keys(state.sections);
+  if(ids.length <= 1){ alert('You need at least one section.'); return; }
+  if(!confirm('Delete "'+state.sections[state.activeSection].name+'"? This cannot be undone.')) return;
+  delete state.sections[state.activeSection];
+  state.activeSection = Object.keys(state.sections)[0];
+  save(); renderSectionOptions(); renderSubjects(); renderDashboard();
+});
+
+document.getElementById('addSubjectBtn').addEventListener('click', ()=>{
+  const sec = state.sections[state.activeSection];
+  sec.subjects.push({ id:uid(), name:'New subject', weekly:{1:0,2:0,3:0,4:0,5:0,6:0}, pct:75 });
+  save(); renderSubjects(); renderDashboard();
+});
+
+const subjectList = document.getElementById('subjectList');
+
+function renderSubjects(){
+  const sec = state.sections[state.activeSection];
+  subjectList.innerHTML = '';
+  if(!sec.subjects.length){
+    subjectList.innerHTML = '<div class="empty">No subjects yet. Add one to get started.</div>';
+    return;
+  }
+  sec.subjects.forEach(subj=>{
+    const el = document.createElement('div');
+    el.className = 'subject';
+    el.innerHTML = `
+      <div class="subject-top">
+        <input type="text" value="${subj.name.replace(/"/g,'&quot;')}" data-role="name">
+        <button class="remove-subj btn-danger" data-role="remove">Remove</button>
+      </div>
+      <div class="days"></div>
+      <div style="font-size:11px; color:var(--text-dim); margin:-4px 0 8px;">Periods per weekday, from the timetable grid (count how many times this subject's slot letter appears that day)</div>
+      <div class="pct-row">
+        <label style="margin:0;">Current attendance</label>
+        <input type="number" min="0" max="100" step="1" value="${subj.pct}" data-role="pct">
+        <span style="color:var(--text-dim); font-size:13px;">%</span>
+      </div>
+    `;
+    const daysWrap = el.querySelector('.days');
+    DAY_CODES.forEach(code=>{
+      const cell = document.createElement('div');
+      cell.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:3px; width:40px;';
+      const lab = document.createElement('div');
+      lab.textContent = DAY_NAMES[code];
+      lab.style.cssText = 'font-size:11px; color:var(--text-dim); font-family:Space Grotesk,sans-serif;';
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = '0'; inp.max = '9'; inp.step = '1';
+      inp.value = subj.weekly[code] || 0;
+      inp.style.cssText = 'padding:6px 4px; text-align:center;';
+      inp.addEventListener('input', ()=>{
+        let v = parseInt(inp.value,10); if(isNaN(v) || v<0) v=0; if(v>9) v=9;
+        subj.weekly[code] = v; save(); renderDashboard();
+      });
+      cell.appendChild(lab); cell.appendChild(inp);
+      daysWrap.appendChild(cell);
+    });
+    el.querySelector('[data-role=name]').addEventListener('input', e=>{
+      subj.name = e.target.value; save(); renderDashboard();
+    });
+    el.querySelector('[data-role=pct]').addEventListener('input', e=>{
+      let v = parseFloat(e.target.value); if(isNaN(v)) v=0; v=Math.max(0,Math.min(100,v));
+      subj.pct = v; save(); renderDashboard();
+    });
+    el.querySelector('[data-role=remove]').addEventListener('click', ()=>{
+      sec.subjects = sec.subjects.filter(s=>s.id!==subj.id);
+      save(); renderSubjects(); renderDashboard();
+    });
+    subjectList.appendChild(el);
+  });
+}
+
+function computeSubject(subj, targetDate){
+  const weekly = subj.weekly;
+  const conducted = countOccurrences(weekly, SEM_START, addDays(today,-1));
+  const remToTarget = countOccurrences(weekly, today, targetDate);
+  const remToSemEnd = countOccurrences(weekly, today, SEM_END);
+  const attended = Math.round((subj.pct/100) * conducted);
+
+  function neededFor(threshold, remaining){
+    const totalAtPoint = conducted + remaining;
+    if(totalAtPoint === 0) return {needed:0, achievable:true};
+    const requiredAttended = Math.ceil(threshold/100 * totalAtPoint - 1e-9);
+    const needed = Math.max(0, requiredAttended - attended);
+    return { needed: Math.min(needed, remaining), achievable: needed <= remaining };
+  }
+
+  const need75 = neededFor(75, remToTarget);
+  const need90 = neededFor(90, remToTarget);
+
+  const maxTotalSemEnd = conducted + remToSemEnd;
+  const maxAttendedSemEnd = attended + remToSemEnd;
+  const maxPossiblePct = maxTotalSemEnd > 0 ? (maxAttendedSemEnd/maxTotalSemEnd*100) : 100;
+  const irreversible = maxPossiblePct < 75 - 1e-9;
+
+  let status, statusClass;
+  if(irreversible){ status='Irreversible detention'; statusClass='red'; }
+  else if(subj.pct >= 90){ status='Excellent'; statusClass='green'; }
+  else if(subj.pct >= 75){ status='Safe'; statusClass='amber'; }
+  else { status='At risk — recoverable'; statusClass='red'; }
+
+  return { conducted, remToTarget, remToSemEnd, attended, need75, need90, irreversible, maxPossiblePct, status, statusClass };
+}
+
+const dashboard = document.getElementById('dashboard');
+const warningZone = document.getElementById('warningZone');
+
+function renderDashboard(){
+  const sec = state.sections[state.activeSection];
+  const targetDate = new Date(targetInput.value + 'T00:00:00');
+  dashboard.innerHTML = '';
+  warningZone.innerHTML = '';
+
+  if(!sec.subjects.length){
+    dashboard.innerHTML = '<div class="empty">Add subjects on the left to see your dashboard.</div>';
+    return;
+  }
+
+  const results = sec.subjects.map(s=>({ subj:s, r: computeSubject(s, targetDate) }));
+  const anyIrreversible = results.filter(x=>x.r.irreversible);
+
+  if(anyIrreversible.length){
+    const banner = document.createElement('div');
+    banner.className = 'warning-banner';
+    banner.innerHTML = `<div class="wi">⚠</div><div>
+      <div class="wt">Irreversible Detention Warning</div>
+      <div>${anyIrreversible.map(x=>x.subj.name).join(', ')} — even attending every remaining class this semester cannot bring attendance back to 75%. Talk to your department about condonation before it's final.</div>
+    </div>`;
+    warningZone.appendChild(banner);
+  }
+
+  const cards = document.createElement('div');
+  cards.className = 'cards';
+  results.forEach(({subj, r})=>{
+    const card = document.createElement('div');
+    card.className = 'card ' + r.statusClass;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="name">${subj.name}</div>
+        <div class="status-tag ${r.statusClass}">${r.status}</div>
+      </div>
+      <div class="pct-big" style="color:var(--${r.statusClass==='green'?'green':r.statusClass==='amber'?'amber':'red'})">${subj.pct}%</div>
+      <div class="metric-row"><span>Classes held so far</span><b>${r.conducted}</b></div>
+      <div class="metric-row"><span>Classes left by target date</span><b>${r.remToTarget}</b></div>
+      <div class="metric-row"><span>Need to attend for 75% by target</span><b>${r.need75.achievable ? r.need75.needed+' / '+r.remToTarget : 'Not possible by this date'}</b></div>
+      <div class="metric-row"><span>Need to attend for 90% by target</span><b>${r.need90.achievable ? r.need90.needed+' / '+r.remToTarget : 'Not possible by this date'}</b></div>
+      <div class="metric-row"><span>Best possible by semester end</span><b>${r.maxPossiblePct.toFixed(1)}%</b></div>
+    `;
+    cards.appendChild(card);
+  });
+  dashboard.appendChild(cards);
+}
+
+// init
+renderSectionOptions();
+renderSubjects();
+renderDashboard();
+</script>
+</body>
+</html>
